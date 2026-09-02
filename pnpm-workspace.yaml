@@ -5,4 +5,4 @@ allowBuilds:
   esbuild: true
 
 minimumReleaseAgeExclude:
-  - "@echovisionlab/geul-proto@0.1.0"
+  - "@echovisionlab/geul-proto@0.1.1"
