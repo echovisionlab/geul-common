@@ -1,0 +1,8 @@
+packages:
+  - "."
+
+allowBuilds:
+  esbuild: true
+
+minimumReleaseAgeExclude:
+  - "@echovisionlab/geul-proto@0.1.0"

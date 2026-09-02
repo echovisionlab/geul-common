@@ -1,0 +1,89 @@
+{
+  "name": "@echovisionlab/geul-common",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/echovisionlab/geul-common.git"
+  },
+  "engines": {
+    "node": "24.19.0"
+  },
+  "packageManager": "pnpm@11.22.0+sha512.1ff870c4c6133dfd88fb2afc46dd13d47f09c9794b438c6fdb47ca98caf3bc16381ee0be93a091b8e3824cf01f889f46d7d9e20910fb0be1ab0fb5baa80dd621",
+  "files": [
+    "README.md",
+    "src",
+    "!src/**/*.test.ts"
+  ],
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint --cache .",
+    "lint-fix": "eslint --cache . --fix",
+    "deadcode": "knip --include files,dependencies,unlisted,exports,types",
+    "typecheck": "tsc --noEmit",
+    "typecheck:local-contracts": "tsc --noEmit -p tsconfig.local-contracts.json",
+    "test": "vitest run",
+    "test:local-contracts": "vitest run --config vitest.local-contracts.config.mjs",
+    "test:coverage": "vitest run --coverage",
+    "package:smoke": "npm pack --dry-run"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./collaboration/artist": "./src/collaboration/artist.ts",
+    "./collaboration/block-room-codec": "./src/collaboration/block-room-codec.ts",
+    "./collaboration/campaign": "./src/collaboration/campaign.ts",
+    "./collaboration/document-layout": "./src/collaboration/document-layout.ts",
+    "./collaboration/document": "./src/collaboration/document.ts",
+    "./collaboration/email-layout": "./src/collaboration/email-layout.ts",
+    "./collaboration/form": "./src/collaboration/form.ts",
+    "./collaboration/label": "./src/collaboration/label.ts",
+    "./collaboration/map-theme": "./src/collaboration/map-theme.ts",
+    "./collaboration/menu": "./src/collaboration/menu.ts",
+    "./collaboration/metadata-ai": "./src/collaboration/metadata-ai.ts",
+    "./collaboration/page": "./src/collaboration/page.ts",
+    "./collaboration/post": "./src/collaboration/post.ts",
+    "./collaboration/post-series": "./src/collaboration/post-series.ts",
+    "./collaboration/release": "./src/collaboration/release.ts",
+    "./collaboration/runtime-events": "./src/collaboration/runtime-events.ts",
+    "./collaboration/work": "./src/collaboration/work.ts",
+    "./editor/materialized-blocks": "./src/editor/materialized-blocks.ts",
+    "./editor/link-normalization": "./src/editor/link-normalization.ts",
+    "./page": "./src/page/index.ts",
+    "./media/block-schemas": "./src/media/block-schemas.ts",
+    "./media/hydration": "./src/media/hydration.ts",
+    "./post": "./src/post/index.ts",
+    "./test/random-id": "./src/test/random-id.ts",
+    "./translation/release": "./src/translation/release.ts",
+    "./types": "./src/types.ts"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.14.0",
+    "@echovisionlab/geul-proto": "^0.1.0",
+    "zod": "^4.4.3"
+  },
+  "peerDependencies": {
+    "yjs": "^13.6.32"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "@typescript/native": "npm:typescript@7.0.2",
+    "@vitest/coverage-v8": "^4.1.10",
+    "eslint": "^10.8.1",
+    "knip": "6.32.2",
+    "prettier": "3.9.6",
+    "typescript": "npm:@typescript/typescript6@6.0.2",
+    "typescript-eslint": "^8.67.0",
+    "vitest": "^4.1.10",
+    "yjs": "^13.6.32"
+  },
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "homepage": "https://github.com/echovisionlab/geul-common#readme",
+  "bugs": {
+    "url": "https://github.com/echovisionlab/geul-common/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
