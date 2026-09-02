@@ -113,9 +113,38 @@ jobs:
           node-version-file: .nvmrc
           package-manager-cache: false
 
+      - name: Check out Geul event contracts sibling
+        if: steps.scope.outputs.run_full == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: echovisionlab/geul-event-contracts
+          ref: main
+          path: geul-event-contracts
+          clean: true
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Move Geul event contracts to sibling path
+        if: steps.scope.outputs.run_full == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          sibling_path="${GITHUB_WORKSPACE}/../geul-event-contracts"
+          if [ -e "${sibling_path}" ]; then
+            echo "Refusing to overwrite existing sibling path: ${sibling_path}" >&2
+            exit 1
+          fi
+          mv "${GITHUB_WORKSPACE}/geul-event-contracts" "${sibling_path}"
+
       - name: Install dependencies
         if: steps.scope.outputs.run_full == 'true'
         run: pnpm install --frozen-lockfile
+
+      - name: Install Geul proto dependencies
+        if: steps.scope.outputs.run_full == 'true'
+        working-directory: ../geul-event-contracts
+        run: pnpm install --frozen-lockfile --filter @echovisionlab/geul-proto...
 
       - name: Lint
         if: steps.scope.outputs.run_full == 'true'
@@ -128,6 +157,19 @@ jobs:
       - name: Typecheck
         if: steps.scope.outputs.run_full == 'true'
         run: pnpm typecheck
+
+      - name: Typecheck local contracts
+        if: steps.scope.outputs.run_full == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -f ../geul-event-contracts/packages/proto/gen/api/content/v1/block_catalog.ts
+          pnpm typecheck:local-contracts
+
+      - name: Test local contracts
+        if: steps.scope.outputs.run_full == 'true'
+        run: pnpm test:local-contracts
 
       - name: Dead code and exports
         if: steps.scope.outputs.run_full == 'true'

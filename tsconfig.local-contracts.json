@@ -4,21 +4,24 @@
     "rootDir": "..",
     "paths": {
       "@echovisionlab/geul-proto/common/*": [
-        "../event-contracts/packages/proto/gen/api/common/v1/*"
+        "../geul-event-contracts/packages/proto/gen/api/common/v1/*"
       ],
       "@echovisionlab/geul-proto/content/*": [
-        "../event-contracts/packages/proto/gen/api/content/v1/*"
+        "../geul-event-contracts/packages/proto/gen/api/content/v1/*"
       ],
       "@echovisionlab/geul-proto/intra/*": [
-        "../event-contracts/packages/proto/gen/api/intra/v1/*"
+        "../geul-event-contracts/packages/proto/gen/api/intra/v1/*"
       ],
       "@echovisionlab/geul-proto/public/*": [
-        "../event-contracts/packages/proto/gen/api/open/v1/*"
+        "../geul-event-contracts/packages/proto/gen/api/open/v1/*"
       ],
       "@echovisionlab/geul-proto/secure/*": [
-        "../event-contracts/packages/proto/gen/api/manage/v1/*"
+        "../geul-event-contracts/packages/proto/gen/api/manage/v1/*"
       ]
     }
   },
-  "include": ["src/**/*.ts", "../event-contracts/packages/proto/gen/**/*.ts"]
+  "include": [
+    "src/**/*.ts",
+    "../geul-event-contracts/packages/proto/gen/**/*.ts"
+  ]
 }
