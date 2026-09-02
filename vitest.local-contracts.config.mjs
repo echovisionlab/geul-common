@@ -4,7 +4,7 @@ import baseConfig from "./vitest.config.ts";
 
 const protoRoot = resolve(
   import.meta.dirname,
-  "../event-contracts/packages/proto/gen/api",
+  "../geul-event-contracts/packages/proto/gen/api",
 );
 
 export default defineConfig({
@@ -12,23 +12,23 @@ export default defineConfig({
   resolve: {
     alias: [
       {
-        find: /^@geul\/proto\/common\/(.+)$/,
+        find: /^@echovisionlab\/geul-proto\/common\/(.+)$/,
         replacement: `${protoRoot}/common/v1/$1`,
       },
       {
-        find: /^@geul\/proto\/content\/(.+)$/,
+        find: /^@echovisionlab\/geul-proto\/content\/(.+)$/,
         replacement: `${protoRoot}/content/v1/$1`,
       },
       {
-        find: /^@geul\/proto\/intra\/(.+)$/,
+        find: /^@echovisionlab\/geul-proto\/intra\/(.+)$/,
         replacement: `${protoRoot}/intra/v1/$1`,
       },
       {
-        find: /^@geul\/proto\/public\/(.+)$/,
+        find: /^@echovisionlab\/geul-proto\/public\/(.+)$/,
         replacement: `${protoRoot}/open/v1/$1`,
       },
       {
-        find: /^@geul\/proto\/secure\/(.+)$/,
+        find: /^@echovisionlab\/geul-proto\/secure\/(.+)$/,
         replacement: `${protoRoot}/manage/v1/$1`,
       },
       {
