@@ -2,7 +2,7 @@
   "name": "@echovisionlab/geul-common",
   "description": "Shared TypeScript contracts and helpers for Geul editors, collaboration, localized content, media blocks, pages, posts, and runtime events.",
   "author": "state303 <state303@dsub.io>",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": false,
   "type": "module",
   "repository": {
