@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/echovisionlab/geul-common/compare/v0.1.3...v0.2.0) (2026-09-08)
+
+
+### Features
+
+* **content:** preserve Mermaid blocks in collaboration models ([#7](https://github.com/echovisionlab/geul-common/issues/7)) ([fd15c4e](https://github.com/echovisionlab/geul-common/commit/fd15c4e78639b08b46a8bbb5b3f09f8f28735971))
+
 ## [0.1.3](https://github.com/echovisionlab/geul-common/compare/v0.1.2...v0.1.3) (2026-09-02)
 
 
