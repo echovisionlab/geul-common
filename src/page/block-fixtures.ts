@@ -20,7 +20,13 @@ export type PageBlockType =
   | "immersive-scene"
   | "map"
   | "external-video"
-  | "columns";
+  | "columns"
+  | "mermaid";
+
+export interface MermaidProps {
+  source: string;
+  title: string;
+}
 
 export interface ExternalVideoProps {
   url: string;
@@ -82,6 +88,7 @@ export const PAGE_BLOCK_TYPES = [
   "map",
   "external-video",
   "columns",
+  "mermaid",
 ] as const satisfies readonly PageBlockType[];
 
 function createParagraphBlock(id: string, text: string): PageBlockFixtureBlock {
@@ -455,6 +462,12 @@ export const PAGE_BLOCK_FIXTURE_SECTIONS: PageBlockFixtureSection[] = [
       poiLabelsMode: "inherit",
       caption: "",
     },
+  },
+  {
+    id: "fixture-section-mermaid",
+    type: "mermaid",
+    settings: {},
+    props: { source: "flowchart LR\n  A --> B", title: "Diagram" },
   },
   {
     id: "fixture-section-external-video",

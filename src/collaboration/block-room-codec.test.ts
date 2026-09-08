@@ -2726,3 +2726,67 @@ describe("block room codec", () => {
     ).toBeDefined();
   });
 });
+
+describe("Mermaid collaborative source", () => {
+  it.each(["rich_text", "page_section"] as const)(
+    "round-trips concurrent source edits and localized captions for %s",
+    (family) => {
+      const source = "flowchart LR\n A --> B";
+      const node = { id: BLOCK_ID, mermaid: { props: { source } } };
+      const caption = { mermaid: { props: { title: "설명" } } };
+      const document =
+        family === "rich_text"
+          ? fromJson(RichTextDocumentSchema, {
+              blockCatalogFingerprint: contentBlockCatalogFingerprint,
+              sourceLocale: "ko",
+              profile: RichTextProfile.POST,
+              base: { nodes: [{ block: node, placement: { index: 0 } }] },
+              localeOverlays: [
+                { locale: "ko", blocks: [{ blockId: BLOCK_ID, ...caption }] },
+              ],
+            })
+          : fromJson(PageDocumentSchema, {
+              blockCatalogFingerprint: contentBlockCatalogFingerprint,
+              sourceLocale: "ko",
+              base: { nodes: [{ section: node, placement: { index: 0 } }] },
+              localeOverlays: [
+                {
+                  locale: "ko",
+                  sections: [{ sectionId: BLOCK_ID, ...caption }],
+                },
+              ],
+            });
+      const type = family === "rich_text" ? "post" : "page";
+      const room = new Y.Doc();
+      hydrateCanonicalBlockRoom(room, type, document);
+      assertCanonicalBlockRoomParity(room, type, document);
+      const peer = clonedRoom(room);
+      const ref = { family, id: BLOCK_ID, path: "props.source" };
+      const text = getBlockRoomCollaborativeText(room, ref);
+      const peerText = getBlockRoomCollaborativeText(peer, ref);
+      expect(text).toBeInstanceOf(Y.Text);
+      text.insert(0, "%% left\n");
+      peerText.insert(peerText.length, "\n%% right");
+      Y.applyUpdate(room, Y.encodeStateAsUpdate(peer));
+      Y.applyUpdate(peer, Y.encodeStateAsUpdate(room));
+      expect(text.toString()).toBe("%% left\n" + source + "\n%% right");
+      expect(peerText.toString()).toBe(text.toString());
+      const title = getBlockRoomCollaborativeText(room, {
+        family,
+        id: BLOCK_ID,
+        locale: true,
+        path: "props.title",
+      });
+      title.insert(title.length, "!");
+      expect(text.toString()).not.toContain("설명");
+      const materialized = materializeCanonicalBlockRoom(room, type);
+      const json =
+        materialized.$typeName === "api.content.v1.LocalizedRichTextDocument"
+          ? toJson(LocalizedRichTextDocumentSchema, materialized)
+          : toJson(LocalizedPageDocumentSchema, materialized);
+      expect(JSON.stringify(json)).toContain("설명!");
+      room.destroy();
+      peer.destroy();
+    },
+  );
+});

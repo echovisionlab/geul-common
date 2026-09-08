@@ -20,12 +20,14 @@ export const PAGE_RICH_TEXT_BLOCK_LOCALE_PROP_KEYS = {
   file: ["alt", "caption"],
   map: ["caption"],
   p5Sketch: ["title"],
+  mermaid: ["title"],
   threeScene: ["title"],
   shader: ["title"],
 } as const;
 
 export const PAGE_RICH_TEXT_BLOCK_SOURCE_OWNED_CONTENT_TYPES = [
   "p5Sketch",
+  "mermaid",
   "threeScene",
   "shader",
 ] as const;
