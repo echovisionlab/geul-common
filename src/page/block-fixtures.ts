@@ -464,12 +464,6 @@ export const PAGE_BLOCK_FIXTURE_SECTIONS: PageBlockFixtureSection[] = [
     },
   },
   {
-    id: "fixture-section-mermaid",
-    type: "mermaid",
-    settings: {},
-    props: { source: "flowchart LR\n  A --> B", title: "Diagram" },
-  },
-  {
     id: "fixture-section-external-video",
     type: "external-video",
     settings: {},
@@ -571,6 +565,12 @@ export const PAGE_BLOCK_FIXTURE_SECTIONS: PageBlockFixtureSection[] = [
         ],
       },
     ],
+  },
+  {
+    id: "fixture-section-mermaid",
+    type: "mermaid",
+    settings: {},
+    props: { source: "flowchart LR\n  A --> B", title: "Diagram" },
   },
 ];
 

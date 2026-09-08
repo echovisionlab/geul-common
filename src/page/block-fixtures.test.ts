@@ -11,6 +11,9 @@ describe("page block fixtures", () => {
     const types = collectPageBlockTypes(PAGE_BLOCK_FIXTURE_SECTIONS);
 
     expect(new Set(types)).toEqual(new Set(PAGE_BLOCK_TYPES));
+    expect(PAGE_BLOCK_FIXTURE_SECTIONS.map((section) => section.type)).toEqual([
+      ...PAGE_BLOCK_TYPES,
+    ]);
     expect(types).toContain("columns");
     expect(types.filter((type) => type === "external-video")).toHaveLength(2);
     expect(types.filter((type) => type === "rich-text")).toHaveLength(2);
