@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/echovisionlab/geul-common/compare/v0.2.0...v0.2.1) (2026-09-08)
+
+
+### Bug Fixes
+
+* **page:** preserve shared fixture catalog order ([#9](https://github.com/echovisionlab/geul-common/issues/9)) ([fbbf96b](https://github.com/echovisionlab/geul-common/commit/fbbf96b6410f2ea750556812954021f5239d80d2))
+
 ## [0.2.0](https://github.com/echovisionlab/geul-common/compare/v0.1.3...v0.2.0) (2026-09-08)
 
 
