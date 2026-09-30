@@ -922,6 +922,58 @@ describe("Block Room inline content reconciliation", () => {
     }
   });
 
+  it("preserves a concurrent link href edit while another peer types", () => {
+    const initial = [
+      {
+        link: {
+          href: "https://before.example",
+          content: [{ text: "hello" }],
+        },
+      },
+    ] as JsonValue[];
+    const hrefPeer = roomWithInline(initial);
+    const typingPeer = cloneRoom(hrefPeer);
+    hrefPeer.clientID = 1;
+    typingPeer.clientID = 2;
+
+    reconcileBlockRoomInlineContent(hrefPeer, inlineRef, initial, [
+      {
+        link: {
+          href: "https://after.example",
+          content: [{ text: "hello" }],
+        },
+      },
+    ]);
+    reconcileBlockRoomInlineContent(typingPeer, inlineRef, initial, [
+      {
+        link: {
+          href: "https://before.example",
+          content: [{ text: "typed hello" }],
+        },
+      },
+    ]);
+
+    Y.applyUpdate(
+      typingPeer,
+      Y.encodeStateAsUpdate(hrefPeer, Y.encodeStateVector(typingPeer)),
+    );
+    Y.applyUpdate(
+      hrefPeer,
+      Y.encodeStateAsUpdate(typingPeer, Y.encodeStateVector(hrefPeer)),
+    );
+
+    const expected = [
+      {
+        link: {
+          href: "https://after.example",
+          content: [{ text: "typed hello" }],
+        },
+      },
+    ];
+    expect(fromYInlineContent(rawInlineContent(hrefPeer))).toEqual(expected);
+    expect(fromYInlineContent(rawInlineContent(typingPeer))).toEqual(expected);
+  });
+
   it("preserves table-cell text identity, matched suffixes, and rejects stale input", () => {
     const room = new Y.Doc();
     hydrateCanonicalBlockRoom(room, "post", "ko", tableDocument(), []);

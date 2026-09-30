@@ -621,7 +621,9 @@ function reconcileRawGroup(
     return;
   }
   if (raw.kind === "link" && desired.kind === "link") {
-    raw.link.set("href", desired.href);
+    if (raw.link.get("href") !== desired.href) {
+      raw.link.set("href", desired.href);
+    }
     const content = raw.content ?? new Y.Array<unknown>();
     if (!raw.content && desired.runs.some((run) => run.text.length > 0)) {
       raw.link.set("content", content);
