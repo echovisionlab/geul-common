@@ -413,6 +413,17 @@ function changedStyleAttributes(
   return result;
 }
 
+function isSurrogatePairBoundary(value: string, boundary: number): boolean {
+  if (boundary <= 0 || boundary >= value.length) {
+    return false;
+  }
+  const before = value.charCodeAt(boundary - 1);
+  const after = value.charCodeAt(boundary);
+  return (
+    before >= 0xd800 && before <= 0xdbff && after >= 0xdc00 && after <= 0xdfff
+  );
+}
+
 function minimalDiff(
   before: string,
   after: string,
@@ -429,6 +440,12 @@ function minimalDiff(
   ) {
     from += 1;
   }
+  if (
+    isSurrogatePairBoundary(before, from) ||
+    isSurrogatePairBoundary(after, from)
+  ) {
+    from -= 1;
+  }
   let oldTo = before.length;
   let newTo = after.length;
   while (
@@ -438,6 +455,13 @@ function minimalDiff(
   ) {
     oldTo -= 1;
     newTo -= 1;
+  }
+  if (
+    isSurrogatePairBoundary(before, oldTo) ||
+    isSurrogatePairBoundary(after, newTo)
+  ) {
+    oldTo += 1;
+    newTo += 1;
   }
   return { from, oldTo, newTo };
 }

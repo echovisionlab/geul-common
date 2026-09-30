@@ -974,6 +974,119 @@ describe("Block Room inline content reconciliation", () => {
     expect(fromYInlineContent(rawInlineContent(typingPeer))).toEqual(expected);
   });
 
+  it("replaces supplementary characters in text, links, and math", () => {
+    const sharedHighBefore = String.fromCodePoint(0x1f600);
+    const sharedHighAfter = String.fromCodePoint(0x1f601);
+    const sharedLowAfter = String.fromCodePoint(0x1fa00);
+    expect(sharedHighBefore.charCodeAt(0)).toBe(sharedHighAfter.charCodeAt(0));
+    expect(sharedHighBefore.charCodeAt(1)).toBe(sharedLowAfter.charCodeAt(1));
+    const initial = [
+      textRun(sharedHighBefore),
+      {
+        link: {
+          href: "https://unicode.example",
+          content: [{ text: sharedHighBefore }],
+        },
+      },
+      { mathInline: { source: sharedHighBefore } },
+    ] as JsonValue[];
+    const next = [
+      textRun(sharedHighAfter),
+      {
+        link: {
+          href: "https://unicode.example",
+          content: [{ text: sharedLowAfter }],
+        },
+      },
+      { mathInline: { source: sharedHighAfter } },
+    ] as JsonValue[];
+    const room = roomWithInline(initial);
+
+    reconcileBlockRoomInlineContent(room, inlineRef, initial, next);
+
+    expect(fromYInlineContent(rawInlineContent(room))).toEqual(next);
+    expect(
+      getBlockRoomCollaborativeText(room, {
+        ...inlineRef,
+        path: "content[0].text.text",
+      }).toString(),
+    ).toBe(sharedHighAfter);
+    expect(
+      getBlockRoomCollaborativeText(room, {
+        ...inlineRef,
+        path: "content[1].link.content[0].text",
+      }).toString(),
+    ).toBe(sharedLowAfter);
+    expect(
+      getBlockRoomCollaborativeText(room, {
+        ...inlineRef,
+        path: "content[2].mathInline.source",
+      }).toString(),
+    ).toBe(sharedHighAfter);
+  });
+
+  it("deletes supplementary characters without splitting their neighboring text", () => {
+    const initialText = `a${String.fromCodePoint(0x1f600)}b`;
+    const remainingText = "ab";
+    const initial = [
+      textRun(initialText),
+      {
+        link: {
+          href: "https://unicode.example",
+          content: [{ text: initialText }],
+        },
+      },
+      { mathInline: { source: initialText } },
+    ] as JsonValue[];
+    const next = [
+      textRun(remainingText),
+      {
+        link: {
+          href: "https://unicode.example",
+          content: [{ text: remainingText }],
+        },
+      },
+      { mathInline: { source: remainingText } },
+    ] as JsonValue[];
+    const room = roomWithInline(initial);
+
+    reconcileBlockRoomInlineContent(room, inlineRef, initial, next);
+
+    expect(fromYInlineContent(rawInlineContent(room))).toEqual(next);
+  });
+
+  it("converges concurrent typing around a supplementary character replacement", () => {
+    const before = String.fromCodePoint(0x1f600);
+    const after = String.fromCodePoint(0x1f601);
+    const initial = [textRun(before)];
+    const replacementPeer = roomWithInline(initial);
+    const typingPeer = cloneRoom(replacementPeer);
+    replacementPeer.clientID = 1;
+    typingPeer.clientID = 2;
+
+    reconcileBlockRoomInlineContent(replacementPeer, inlineRef, initial, [
+      textRun(after),
+    ]);
+    reconcileBlockRoomInlineContent(typingPeer, inlineRef, initial, [
+      textRun(`${before}!`),
+    ]);
+
+    Y.applyUpdate(
+      typingPeer,
+      Y.encodeStateAsUpdate(replacementPeer, Y.encodeStateVector(typingPeer)),
+    );
+    Y.applyUpdate(
+      replacementPeer,
+      Y.encodeStateAsUpdate(typingPeer, Y.encodeStateVector(replacementPeer)),
+    );
+
+    const expected = [textRun(`${after}!`)];
+    expect(fromYInlineContent(rawInlineContent(replacementPeer))).toEqual(
+      expected,
+    );
+    expect(fromYInlineContent(rawInlineContent(typingPeer))).toEqual(expected);
+  });
+
   it("preserves table-cell text identity, matched suffixes, and rejects stale input", () => {
     const room = new Y.Doc();
     hydrateCanonicalBlockRoom(room, "post", "ko", tableDocument(), []);
