@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/echovisionlab/geul-common/compare/v0.2.3...v0.2.4) (2026-09-30)
+
+
+### Bug Fixes
+
+* **collaboration:** make inline and locale ownership explicit ([#18](https://github.com/echovisionlab/geul-common/issues/18)) ([618a606](https://github.com/echovisionlab/geul-common/commit/618a60693b63fcea19642af15a4b957edeffea6f))
+
 ## [0.2.3](https://github.com/echovisionlab/geul-common/compare/v0.2.2...v0.2.3) (2026-09-30)
 
 
