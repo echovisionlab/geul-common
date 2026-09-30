@@ -31,11 +31,11 @@ import {
   richTextSlot,
   stringValue,
   yMap,
-  fromYValue,
   type BlockRoomDocumentType,
   type BlockRoomNodeFamily,
   type BlockRoomTypedDocument,
 } from "./internal.ts";
+import { fromYRichTextBlockPayload } from "./inline-content-projection.ts";
 
 export function nodePayload(
   node: Y.Map<unknown>,
@@ -46,10 +46,11 @@ export function nodePayload(
   const family = stringValue(node.get("family"), `${reason}:family`);
   if (family !== "page_section" && family !== "rich_text")
     fail(`${reason}:family`);
+  const kind = stringValue(node.get("kind"), `${reason}:kind`);
   return {
     family,
-    kind: stringValue(node.get("kind"), `${reason}:kind`),
-    payload: fromYValue(node.get("payload")),
+    kind,
+    payload: fromYRichTextBlockPayload(family, kind, node.get("payload")),
   };
 }
 

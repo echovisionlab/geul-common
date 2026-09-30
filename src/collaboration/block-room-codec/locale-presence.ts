@@ -19,6 +19,7 @@ import {
   fromYValue,
   type JsonObject,
 } from "./internal.ts";
+import { fromYInlineContent } from "./inline-content-projection.ts";
 import {
   blockRoomBaseNodes,
   blockRoomLocaleOverlay,
@@ -426,9 +427,20 @@ export function blockRoomLocaleValue(
 ): unknown {
   const ref = blockRoomLocaleValueRef(yDocument, target);
   try {
-    return fromYValue(
-      payloadValue(roomNode(yDocument, ref), ref.path, "locale_presence:value"),
+    const value = payloadValue(
+      roomNode(yDocument, ref),
+      ref.path,
+      "locale_presence:value",
     );
+    if (
+      ref.family === "rich_text" &&
+      (target.fieldHandle === "content" ||
+        target.fieldHandle === "tableContent") &&
+      value instanceof Y.Array
+    ) {
+      return fromYInlineContent(value);
+    }
+    return fromYValue(value);
   } catch {
     return localeValueDefault(yDocument, target);
   }
