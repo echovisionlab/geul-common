@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/echovisionlab/geul-common/compare/v0.2.1...v0.2.2) (2026-09-30)
+
+
+### Bug Fixes
+
+* preserve collaborative text during inline formatting ([#13](https://github.com/echovisionlab/geul-common/issues/13)) ([656a92b](https://github.com/echovisionlab/geul-common/commit/656a92b6c6f88250edf9ba3eb74a034dd180d7c4))
+
 ## [0.2.1](https://github.com/echovisionlab/geul-common/compare/v0.2.0...v0.2.1) (2026-09-08)
 
 
