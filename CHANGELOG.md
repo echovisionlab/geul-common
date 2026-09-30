@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.3](https://github.com/echovisionlab/geul-common/compare/v0.2.2...v0.2.3) (2026-09-30)
+
+
+### Bug Fixes
+
+* **editor:** keep Unicode edits on character boundaries ([e0bfb2e](https://github.com/echovisionlab/geul-common/commit/e0bfb2e5ee2aa7c5eb573509a3fb9ffc0e3b430f))
+* **editor:** keep Unicode text edits on character boundaries ([daa29f9](https://github.com/echovisionlab/geul-common/commit/daa29f974d5a534a772511f3ef749f67ef130597))
+* retain independent link edits and streamline inline projection ([#15](https://github.com/echovisionlab/geul-common/issues/15)) ([2fd8092](https://github.com/echovisionlab/geul-common/commit/2fd8092168d37ad7f3bed5243a3ccd6fc5cb8177))
+
 ## [0.2.2](https://github.com/echovisionlab/geul-common/compare/v0.2.1...v0.2.2) (2026-09-30)
 
 
