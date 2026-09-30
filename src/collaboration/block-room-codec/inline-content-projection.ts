@@ -167,9 +167,13 @@ function projectedTextField(
       return fail(`${reason}:embed`);
     }
     const item: ProjectedTextRun = { text: operation.insert };
-    const style = jsonStyle(mergedTextStyle(legacyStyle, operation.attributes));
-    if (style) {
-      item.styles = style;
+    if (operation.attributes !== undefined || styleValue !== undefined) {
+      const style = jsonStyle(
+        mergedTextStyle(legacyStyle, operation.attributes),
+      );
+      if (style) {
+        item.styles = style;
+      }
     }
     appendProjectedText(result, item);
   }
@@ -347,13 +351,12 @@ export function fromYRichTextBlockPayload(
       "inline_content:payload_json",
     ) as JsonValue;
   }
-  const payload = Object.fromEntries(value.entries());
   const projected = decodeOtherFields(
     value,
     "content",
     "inline_content:payload_json",
   );
-  const rawContent = payload.content;
+  const rawContent = value.get("content");
   if (rawContent === undefined) {
     return projected as JsonValue;
   }
