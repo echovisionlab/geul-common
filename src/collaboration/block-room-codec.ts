@@ -33,6 +33,7 @@ export {
   type BlockRoomAtomicValue,
   type ReplaceRichTextBlockDataOptions,
 } from "./block-room-codec/payload-mutations.ts";
+export { reconcileBlockRoomInlineContent } from "./block-room-codec/inline-content-mutations.ts";
 export {
   roomDocumentType,
   roomLocale,

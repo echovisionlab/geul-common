@@ -15,6 +15,11 @@ import type {
 import * as Y from "yjs";
 import { fromYValue, isCollaborativeTextPath, toYValue } from "./internal.ts";
 import { blockRoomBaseNodes } from "./materialization.ts";
+import { fromYInlineContent } from "./inline-content-projection.ts";
+import {
+  isBlockRoomInlineContentRef,
+  reconcileBlockRoomInlineContent,
+} from "./inline-content-mutations.ts";
 import {
   blockRoomLocaleValueRef,
   deleteBlockRoomLocalePresenceForBlocks,
@@ -166,6 +171,7 @@ function ensureYParent(node: Y.Map<unknown>, path: string): void {
 }
 
 function replaceYValue(
+  yDocument: Y.Doc,
   node: Y.Map<unknown>,
   ref: BlockRoomPayloadRef,
   value: JsonValue,
@@ -185,6 +191,15 @@ function replaceYValue(
     return;
   }
   if (current instanceof Y.Array && Array.isArray(value)) {
+    if (isBlockRoomInlineContentRef(ref)) {
+      reconcileBlockRoomInlineContent(
+        yDocument,
+        ref,
+        fromYInlineContent(current),
+        value,
+      );
+      return;
+    }
     if (current.length > 0) current.delete(0, current.length);
     if (value.length > 0) {
       current.insert(
@@ -301,6 +316,7 @@ function reconcileSourceTableLocale(yDocument: Y.Doc, blockId: string): void {
     };
   });
   replaceYValue(
+    yDocument,
     localeNode,
     { id: blockId, family: "rich_text", locale: true, path: "content" },
     { rows } as JsonValue,
@@ -346,6 +362,7 @@ function reconcileSourceImmersiveLocale(
     },
   );
   replaceYValue(
+    yDocument,
     localeNode,
     {
       id: blockId,
@@ -500,6 +517,7 @@ export function setAIDocumentField(
     operationFail("target_locale_scalar_required");
   }
   replaceYValue(
+    yDocument,
     node,
     ref,
     target.field === "table" ? sourceTableValue(next) : next,
@@ -541,7 +559,7 @@ export function attachAIDocumentFile(
   const target = blockTarget(targetValue);
   const { ref, descriptor } = fieldRef(yDocument, target, targetValue, true);
   if (descriptor?.type !== "file_attachment") operationFail("file:field");
-  replaceYValue(roomNode(yDocument, ref), ref, {
+  replaceYValue(yDocument, roomNode(yDocument, ref), ref, {
     activeFileId: requiredHandle(file, "file:handle"),
   });
 }
