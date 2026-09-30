@@ -12,17 +12,10 @@ import {
   type JsonObject,
 } from "./internal.ts";
 
-const RICH_TEXT_STYLE_KEYS = [
-  "bold",
-  "italic",
-  "underline",
-  "strike",
-  "code",
-  "textColor",
-  "backgroundColor",
-] as const;
-
-type RichTextStyleKey = (typeof RICH_TEXT_STYLE_KEYS)[number];
+import {
+  RICH_TEXT_STYLE_KEYS,
+  type RichTextStyleKey,
+} from "./inline-content-model.ts";
 type RichTextStyleValue = boolean | string;
 type RichTextStyle = Partial<Record<RichTextStyleKey, RichTextStyleValue>>;
 type ProjectedTextRun = JsonObject & { text: string };
@@ -367,10 +360,6 @@ export function fromYRichTextBlockPayload(
   const content = projectedTableContent(rawContent);
   projected.content = content;
   return projected as JsonValue;
-}
-
-export function richTextStyleKeys(): readonly RichTextStyleKey[] {
-  return RICH_TEXT_STYLE_KEYS;
 }
 
 export function projectedStyledTextRuns(
