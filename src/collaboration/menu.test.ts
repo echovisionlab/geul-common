@@ -540,6 +540,144 @@ describe("Menu collaboration room", () => {
     document.destroy();
   });
 
+  it("skips stale edits and additions beneath a peer-deleted item", () => {
+    const document = hydrateMenuCanonicalRoom({
+      sourceLocale: "en",
+      locale: "en",
+      localeExists: true,
+      name: "Main",
+      items: [
+        { id: "parent", label: "Parent", linkType: "custom" },
+        {
+          id: "sibling",
+          label: "Sibling",
+          linkType: "custom",
+          url: "/before",
+        },
+      ],
+      sourceLabels: { parent: "Parent", sibling: "Sibling" },
+      requestedLabels: { parent: "Parent", sibling: "Sibling" },
+    });
+    const stalePrevious = sourceSnapshot(document);
+    const peer = new Y.Doc();
+    Y.applyUpdate(peer, Y.encodeStateAsUpdate(document));
+
+    const peerPrevious = sourceSnapshot(peer);
+    const peerNext = [
+      {
+        id: "sibling",
+        label: "Peer sibling",
+        linkType: "custom",
+        url: "/before",
+      },
+      { id: "peer-added", label: "Peer item", linkType: "custom" },
+    ];
+    replaceMenuCanonicalSource(peer, "Main", peerNext, peerPrevious);
+    Y.applyUpdate(
+      document,
+      Y.encodeStateAsUpdate(peer, Y.encodeStateVector(document)),
+    );
+
+    const localNext = stalePrevious.items.map((item) =>
+      item.id === "parent"
+        ? {
+            ...item,
+            label: "Stale parent edit",
+            children: [
+              { id: "local-child", label: "Local child", linkType: "custom" },
+            ],
+          }
+        : { ...item, url: "/local" },
+    );
+    replaceMenuCanonicalSource(
+      document,
+      stalePrevious.name,
+      localNext,
+      stalePrevious,
+    );
+
+    expect(materializeMenuCanonicalItems(document)).toEqual([
+      {
+        id: "sibling",
+        linkType: "custom",
+        url: "/local",
+        label: "Peer sibling",
+      },
+      {
+        id: "peer-added",
+        linkType: "custom",
+        label: "Peer item",
+      },
+    ]);
+    expect(extractMenuCanonicalSnapshot(document).requestedLabels).toEqual({
+      sibling: "Peer sibling",
+      "peer-added": "Peer item",
+    });
+    peer.destroy();
+    document.destroy();
+  });
+
+  it("keeps a child and its subtree when deleting its observed parent while moving it out", () => {
+    const document = hydrateMenuCanonicalRoom({
+      sourceLocale: "en",
+      locale: "en",
+      localeExists: true,
+      name: "Main",
+      items: [
+        {
+          id: "parent",
+          label: "Parent",
+          linkType: "custom",
+          children: [
+            {
+              id: "child",
+              label: "Child",
+              linkType: "custom",
+              children: [
+                { id: "grandchild", label: "Grandchild", linkType: "custom" },
+              ],
+            },
+          ],
+        },
+      ],
+      sourceLabels: {
+        parent: "Parent",
+        child: "Child",
+        grandchild: "Grandchild",
+      },
+      requestedLabels: {
+        parent: "Parent",
+        child: "Child",
+        grandchild: "Grandchild",
+      },
+    });
+    const previous = sourceSnapshot(document);
+    const child = previous.items[0]!.children![0]!;
+
+    replaceMenuCanonicalSource(
+      document,
+      previous.name,
+      [{ ...child, url: "/moved" }],
+      previous,
+    );
+
+    expect(materializeMenuCanonicalItems(document)).toEqual([
+      {
+        id: "child",
+        linkType: "custom",
+        url: "/moved",
+        label: "Child",
+        children: [
+          { id: "grandchild", linkType: "custom", label: "Grandchild" },
+        ],
+      },
+    ]);
+    expect(document.getMap<string>(MENU_ITEMS_MAP_NAME).has("parent")).toBe(
+      false,
+    );
+    document.destroy();
+  });
+
   it("uses deterministic defaults and rejects malformed identities", () => {
     const document = hydrateMenuCanonicalRoom({
       sourceLocale: "en",

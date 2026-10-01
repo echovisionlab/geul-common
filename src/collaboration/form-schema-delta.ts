@@ -4,8 +4,7 @@ export type FormSchemaPatchErrorReason =
   | "invalid_schema"
   | "schema_identity_changed"
   | "target_topology_changed"
-  | "schema_identity_collision"
-  | "schema_add_parent_missing";
+  | "schema_identity_collision";
 
 export class FormSchemaPatchError extends Error {
   constructor(readonly reason: FormSchemaPatchErrorReason) {
@@ -335,6 +334,7 @@ export function applyFormSchemaPatch(
   }
 
   const added = new Set<string>();
+  const skippedAdditions = new Set<string>();
   for (const [key, node] of next.nodes) {
     if (previous.nodes.has(key)) continue;
     if (result.nodes.has(key)) {
@@ -344,8 +344,15 @@ export function applyFormSchemaPatch(
       }
       continue;
     }
-    if (node.parent !== ROOT_PARENT && !result.nodes.has(node.parent)) {
-      throw new FormSchemaPatchError("schema_add_parent_missing");
+    // Schemas are indexed parent-first. A missing parent here is an observed
+    // peer deletion or a new parent already skipped beneath one.
+    if (
+      node.parent !== ROOT_PARENT &&
+      (skippedAdditions.has(node.parent) ||
+        (previous.nodes.has(node.parent) && !current.nodes.has(node.parent)))
+    ) {
+      skippedAdditions.add(key);
+      continue;
     }
     result.nodes.set(key, structuredClone(node));
     added.add(key);
