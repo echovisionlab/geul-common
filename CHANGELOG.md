@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0](https://github.com/echovisionlab/geul-common/compare/v0.2.4...v0.3.0) (2026-10-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* replay editor intent against current canonical state ([#20](https://github.com/echovisionlab/geul-common/issues/20))
+
+### Bug Fixes
+
+* replay editor intent against current canonical state ([#20](https://github.com/echovisionlab/geul-common/issues/20)) ([8531502](https://github.com/echovisionlab/geul-common/commit/85315027cd499e6e06c89c995cf1387e67b90563))
+
 ## [0.2.4](https://github.com/echovisionlab/geul-common/compare/v0.2.3...v0.2.4) (2026-09-30)
 
 
