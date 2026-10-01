@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/echovisionlab/geul-common/compare/v0.3.0...v0.3.1) (2026-10-01)
+
+
+### Bug Fixes
+
+* **collaboration:** preserve concurrent recovery intent ([#22](https://github.com/echovisionlab/geul-common/issues/22)) ([8b0e1d2](https://github.com/echovisionlab/geul-common/commit/8b0e1d235a5d6eaf143dd19707a6067e5564b630))
+
 ## [0.3.0](https://github.com/echovisionlab/geul-common/compare/v0.2.4...v0.3.0) (2026-10-01)
 
 
