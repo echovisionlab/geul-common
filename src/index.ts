@@ -4,6 +4,7 @@ export * from "./collaboration/block-room-codec.ts";
 export * from "./collaboration/document-layout.ts";
 export * from "./collaboration/document.ts";
 export * from "./collaboration/form.ts";
+export * from "./collaboration/form-schema-delta.ts";
 export * from "./collaboration/label.ts";
 export * from "./collaboration/map-theme.ts";
 export * from "./collaboration/metadata-ai.ts";

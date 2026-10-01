@@ -118,7 +118,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: echovisionlab/geul-event-contracts
-          ref: b0376ddb94a07373cbdb6b77d734ba730238ad62 # v0.2.0
+          ref: e824804969748d694c03a8e09b006274e0c0d283 # v0.3.0
           path: geul-event-contracts
           clean: true
           fetch-depth: 1

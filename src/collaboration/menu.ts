@@ -42,6 +42,11 @@ export interface MenuCanonicalSnapshot {
   requestedLabels: Record<string, string>;
 }
 
+export interface MenuCanonicalSourceSnapshot {
+  name: string;
+  items: readonly MenuCollaborationItem[];
+}
+
 export function hydrateMenuCanonicalRoom(input: MenuCanonicalRoomInput): Y.Doc {
   const document = new Y.Doc();
   document.transact(() => {
@@ -50,7 +55,7 @@ export function hydrateMenuCanonicalRoom(input: MenuCanonicalRoomInput): Y.Doc {
     context.set("locale", input.locale);
     context.set("localeExists", input.localeExists);
     document.getMap<string>(MENU_ROOT_MAP_NAME).set("name", input.name);
-    replaceMenuStructure(document, input.items);
+    replaceMenuStructure(document, [], input.items);
     const sourceLabels = document.getMap<string>(MENU_SOURCE_LABELS_MAP_NAME);
     const requestedLabels = menuLocaleLabelsMap(document);
     for (const [id, label] of Object.entries(input.sourceLabels))
@@ -125,24 +130,61 @@ export function replaceMenuCanonicalSource(
   document: Y.Doc,
   name: string,
   items: readonly MenuCollaborationItem[],
+  previous: MenuCanonicalSourceSnapshot,
 ): void {
-  document.getMap<string>(MENU_ROOT_MAP_NAME).set("name", name);
-  replaceMenuStructure(document, items);
+  assertMenuCanonicalSourceSnapshot(previous);
+  const root = document.getMap<string>(MENU_ROOT_MAP_NAME);
+  if (previous.name !== name) root.set("name", name);
+  const deletedItemIds = replaceMenuStructure(document, previous.items, items);
   const labels = menuLocaleLabelsMap(document);
+  const sourceLabels = document.getMap<string>(MENU_SOURCE_LABELS_MAP_NAME);
   const locale = document
     .getMap<string | boolean>(MENU_CONTEXT_MAP_NAME)
     .get("locale");
   if (typeof locale !== "string") {
     throw new Error("Menu collaboration locale is required");
   }
-  const ids = new Set(flattenMenuItems(items).map(({ item }) => item.id));
-  for (const id of [...labels.keys()]) if (!ids.has(id)) labels.delete(id);
-  for (const { item } of flattenMenuItems(items)) {
-    if (!menuItemOwnsLocaleLabel(item, locale)) {
-      labels.delete(item.id);
-    } else if (item.label !== undefined) {
-      labels.set(item.id, item.label);
+  const previousById = new Map(
+    flattenMenuItems(previous.items).map((entry) => [
+      entry.item.id,
+      entry.item,
+    ]),
+  );
+  const nextById = new Map(
+    flattenMenuItems(items).map((entry) => [entry.item.id, entry.item]),
+  );
+  for (const id of deletedItemIds) {
+    labels.delete(id);
+    sourceLabels.delete(id);
+  }
+  for (const [id, item] of nextById) {
+    const before = previousById.get(id);
+    const previouslyOwned = before
+      ? menuItemOwnsLocaleLabel(before, locale)
+      : false;
+    const currentlyOwned = menuItemOwnsLocaleLabel(item, locale);
+    if (!currentlyOwned) {
+      if (previouslyOwned) labels.delete(id);
+    } else if (!before || !previouslyOwned || before.label !== item.label) {
+      if (item.label !== undefined) labels.set(id, item.label);
     }
+  }
+}
+
+function assertMenuCanonicalSourceSnapshot(
+  value: unknown,
+): asserts value is MenuCanonicalSourceSnapshot {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    !("name" in value) ||
+    typeof value.name !== "string" ||
+    !("items" in value) ||
+    !Array.isArray(value.items)
+  ) {
+    throw new Error(
+      "Menu source replacement requires an observed previous snapshot",
+    );
   }
 }
 
@@ -180,29 +222,77 @@ export function extractMenuCanonicalSnapshot(
 
 function replaceMenuStructure(
   document: Y.Doc,
+  previousItems: readonly MenuCollaborationItem[],
   nextItems: readonly MenuCollaborationItem[],
-): void {
+): Set<string> {
+  const previous = flattenMenuItems(previousItems);
   const flattened = flattenMenuItems(nextItems);
+  const previousById = new Map(previous.map((entry) => [entry.item.id, entry]));
   const nextIDs = new Set(flattened.map(({ item }) => item.id));
   if (nextIDs.size !== flattened.length || nextIDs.has(MENU_ROOT_PARENT)) {
+    throw new Error("Invalid Menu collaboration item identity");
+  }
+  const previousIDs = new Set(previous.map(({ item }) => item.id));
+  if (
+    previousIDs.size !== previous.length ||
+    previousIDs.has(MENU_ROOT_PARENT)
+  ) {
     throw new Error("Invalid Menu collaboration item identity");
   }
   const items = document.getMap<string>(MENU_ITEMS_MAP_NAME);
   const parents = document.getMap<string>(MENU_PARENTS_MAP_NAME);
   const orders = document.getMap<number>(MENU_ORDERS_MAP_NAME);
-  for (const id of [...items.keys()]) {
-    if (!nextIDs.has(id)) {
-      items.delete(id);
-      parents.delete(id);
-      orders.delete(id);
+  const childrenByParent = new Map<string, string[]>();
+  for (const id of items.keys()) {
+    const parent = parents.get(id) ?? MENU_ROOT_PARENT;
+    const children = childrenByParent.get(parent) ?? [];
+    children.push(id);
+    childrenByParent.set(parent, children);
+  }
+
+  const deletedIDs = new Set([...previousIDs].filter((id) => !nextIDs.has(id)));
+  const pendingDeletedIDs = [...deletedIDs];
+  for (let index = 0; index < pendingDeletedIDs.length; index += 1) {
+    const deletedParent = pendingDeletedIDs[index]!;
+    for (const childId of childrenByParent.get(deletedParent) ?? []) {
+      if (nextIDs.has(childId) || deletedIDs.has(childId)) continue;
+      deletedIDs.add(childId);
+      pendingDeletedIDs.push(childId);
     }
   }
-  for (const { item, parent, order } of flattened) {
-    const stored = menuItemStructure(item);
-    items.set(item.id, JSON.stringify(stored));
-    parents.set(item.id, parent);
-    orders.set(item.id, order);
+  for (const id of deletedIDs) {
+    items.delete(id);
+    parents.delete(id);
+    orders.delete(id);
   }
+  for (const { item, parent, order } of flattened) {
+    const before = previousById.get(item.id);
+    const stored = menuItemStructure(item);
+    if (
+      !before ||
+      stableMenuJson(menuItemStructure(before.item)) !== stableMenuJson(stored)
+    ) {
+      items.set(item.id, JSON.stringify(stored));
+    }
+    if (!before || before.parent !== parent) parents.set(item.id, parent);
+    if (!before || before.order !== order) orders.set(item.id, order);
+  }
+  return deletedIDs;
+}
+
+function stableMenuJson(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(stableMenuJson).join(",")}]`;
+  }
+  if (typeof value === "object" && value !== null) {
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record)
+      .filter((key) => record[key] !== undefined)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableMenuJson(record[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
 }
 
 function flattenMenuItems(items: readonly MenuCollaborationItem[]): Array<{
