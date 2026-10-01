@@ -12,9 +12,9 @@ type Token =
 
 const MAX_EXACT_EDIT_DISTANCE = 128;
 
-interface Projection {
-  readonly retained: Map<number, Token>;
-  readonly inserted: Map<number, Token[]>;
+interface Projection<T> {
+  readonly retained: Map<number, T>;
+  readonly inserted: Map<number, T[]>;
 }
 
 function tokenIdentity(token: Token): string {
@@ -22,13 +22,13 @@ function tokenIdentity(token: Token): string {
 }
 
 /** Align text by Unicode code point; style/link changes remain attribute edits. */
-function project(
-  before: readonly Token[],
-  after: readonly Token[],
-  identity: (token: Token) => string = tokenIdentity,
-): Projection {
-  const retained = new Map<number, Token>();
-  const inserted = new Map<number, Token[]>();
+function project<T>(
+  before: readonly T[],
+  after: readonly T[],
+  identity: (token: T) => string,
+): Projection<T> {
+  const retained = new Map<number, T>();
+  const inserted = new Map<number, T[]>();
   let position = 0;
   const changes = diffArrays([...before], [...after], {
     comparator: (left, right) => identity(left) === identity(right),
@@ -53,11 +53,11 @@ function project(
  * remains bounded while still replaying insertions/deletions as author intent.
  * Exact Myers alignment remains the normal path for ordinary editing.
  */
-function projectByForwardAnchors(
-  before: readonly Token[],
-  after: readonly Token[],
-  identity: (token: Token) => string,
-): Projection {
+function projectByForwardAnchors<T>(
+  before: readonly T[],
+  after: readonly T[],
+  identity: (token: T) => string,
+): Projection<T> {
   const occurrences = new Map<string, { positions: number[]; next: number }>();
   before.forEach((token, index) => {
     const key = identity(token);
@@ -68,10 +68,10 @@ function projectByForwardAnchors(
     }
     entry.positions.push(index);
   });
-  const retained = new Map<number, Token>();
-  const inserted = new Map<number, Token[]>();
+  const retained = new Map<number, T>();
+  const inserted = new Map<number, T[]>();
   let cursor = 0;
-  let pending: Token[] = [];
+  let pending: T[] = [];
   for (const token of after) {
     const entry = occurrences.get(identity(token));
     if (entry) {
@@ -122,33 +122,88 @@ function insertionIdentity(token: Token): string {
   return tokenIdentity(token);
 }
 
+/** Preserve each newly inserted adjacent link as a semantic group. */
+function linkedInsertionGroups(tokens: readonly Token[]): Token[][] | null {
+  if (!tokens.some((token) => token.kind === "linkBoundary")) return null;
+  if (
+    tokens.some(
+      (token) =>
+        token.kind !== "linkBoundary" &&
+        token.kind !== "emptyLink" &&
+        (token.kind !== "text" || token.attributes.href === undefined),
+    )
+  )
+    return null;
+  const groups: Token[][] = [[]];
+  for (const token of tokens) {
+    if (token.kind === "linkBoundary") groups.push([]);
+    else groups[groups.length - 1]!.push(token);
+  }
+  return groups;
+}
+
+function linkGroupIdentity(group: readonly Token[]): string {
+  return JSON.stringify(
+    group.map((token) => [insertionIdentity(token), token.attributes.href]),
+  );
+}
+
+/** An ordered union retains accepted inserts and appends only missing intent. */
+function mergeInsertionSequences<T>(
+  peer: readonly T[],
+  local: readonly T[],
+  identity: (value: T) => string,
+  merge: (peerValue: T, localValue: T) => T,
+): T[] {
+  if (local.length === 0) return [...peer];
+  if (peer.length === 0) return [...local];
+  const localProjection = project(peer, local, identity);
+  const result: T[] = [];
+  for (let position = 0; position <= peer.length; position++) {
+    for (const value of localProjection.inserted.get(position) ?? [])
+      result.push(value);
+    const peerValue = peer[position];
+    if (peerValue === undefined) continue;
+    const localValue = localProjection.retained.get(position);
+    result.push(
+      localValue === undefined ? peerValue : merge(peerValue, localValue),
+    );
+  }
+  return result;
+}
+
 function mergeInsertions(
   peer: readonly Token[],
   local: readonly Token[],
 ): Token[] {
-  if (local.length === 0) return [...peer];
-  if (peer.length === 0) return [...local];
-  // Preserve the order of both insertion sequences. Shared characters may
-  // already be durable, with peer edits interleaved between them; merge those
-  // once and insert only the missing local characters.
-  const localProjection = project(peer, local, insertionIdentity);
-  const result: Token[] = [];
-  for (let position = 0; position <= peer.length; position++) {
-    for (const token of localProjection.inserted.get(position) ?? [])
-      result.push(token);
-    const peerToken = peer[position];
-    if (!peerToken) continue;
-    const localToken = localProjection.retained.get(position);
-    result.push(
-      localToken
-        ? withAttributes(
-            peerToken,
-            mergeAttributes({}, localToken.attributes, peerToken.attributes),
-          )
-        : peerToken,
+  const peerGroups = linkedInsertionGroups(peer);
+  const localGroups = linkedInsertionGroups(local);
+  if (peerGroups && localGroups) {
+    // Matching separator tokens alone would join unrelated links from two
+    // insertion streams. Align whole link groups, then merge their run intent.
+    const groups = mergeInsertionSequences(
+      peerGroups,
+      localGroups,
+      linkGroupIdentity,
+      (peerGroup, localGroup) => mergeInsertions(peerGroup, localGroup),
     );
+    const result: Token[] = [];
+    for (const group of groups) {
+      if (result.length) result.push({ kind: "linkBoundary", attributes: {} });
+      for (const token of group) result.push(token);
+    }
+    return result;
   }
-  return result;
+  return mergeInsertionSequences(
+    peer,
+    local,
+    insertionIdentity,
+    (peerToken, localToken) =>
+      withAttributes(
+        peerToken,
+        mergeAttributes({}, localToken.attributes, peerToken.attributes),
+      ),
+  );
 }
 
 function mergeTokens(
@@ -156,8 +211,8 @@ function mergeTokens(
   local: readonly Token[],
   peer: readonly Token[],
 ): Token[] {
-  const localProjection = project(before, local);
-  const peerProjection = project(before, peer);
+  const localProjection = project(before, local, tokenIdentity);
+  const peerProjection = project(before, peer, tokenIdentity);
   const result: Token[] = [];
   for (let position = 0; position <= before.length; position++) {
     for (const token of mergeInsertions(

@@ -411,6 +411,47 @@ describe("canonical rich text recovery", () => {
     expect(recovered.replayAgain()).toEqual(recovered.content);
   });
 
+  it("preserves independently inserted adjacent links at the same anchor", () => {
+    const link = (value: string, styles = {}): JsonValue => ({
+      link: {
+        href: "https://example.com/same",
+        content: [{ text: value, styles }],
+      },
+    });
+    expect(
+      replayInline([], [link("LL"), link("MM")], [link("PP"), link("QQ")])
+        .content,
+    ).toEqual(
+      ["PP", "QQ", "LL", "MM"].map((value) => ({
+        link: { href: "https://example.com/same", content: [{ text: value }] },
+      })),
+    );
+    expect(
+      mergeInlineIntent(
+        [],
+        [link("LL", { italic: true }), link("MM")],
+        [link("LL", { bold: true }), link("MM")],
+      ),
+    ).toEqual([
+      {
+        link: {
+          href: "https://example.com/same",
+          content: [{ text: "LL", styles: { bold: true, italic: true } }],
+        },
+      },
+      { link: { href: "https://example.com/same", content: [{ text: "MM" }] } },
+    ]);
+  });
+
+  it("preserves adjacent links and ordinary text in a mixed insertion stream", () => {
+    const linked = (value: string): JsonValue => ({
+      link: { href: "https://example.com/same", content: [{ text: value }] },
+    });
+    expect(
+      mergeInlineIntent([], [linked("LL"), linked("MM"), text("!")], []),
+    ).toEqual([linked("LL"), linked("MM"), { text: { text: "!" } }]);
+  });
+
   it("retains independent peer edits across large local replacements", () => {
     const before = "a".repeat(1000) + "KEEP" + "z".repeat(1000);
     const local = "x".repeat(1000) + "KEEP" + "y".repeat(1000);
