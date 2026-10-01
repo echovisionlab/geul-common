@@ -158,6 +158,7 @@ export function replaceMenuCanonicalSource(
     sourceLabels.delete(id);
   }
   for (const [id, item] of nextById) {
+    if (!document.getMap<string>(MENU_ITEMS_MAP_NAME).has(id)) continue;
     const before = previousById.get(id);
     const previouslyOwned = before
       ? menuItemOwnsLocaleLabel(before, locale)
@@ -242,6 +243,10 @@ function replaceMenuStructure(
   const items = document.getMap<string>(MENU_ITEMS_MAP_NAME);
   const parents = document.getMap<string>(MENU_PARENTS_MAP_NAME);
   const orders = document.getMap<number>(MENU_ORDERS_MAP_NAME);
+  const liveIDs = new Set(items.keys());
+  const peerDeletedObservedIDs = new Set(
+    [...previousIDs].filter((id) => !liveIDs.has(id)),
+  );
   const childrenByParent = new Map<string, string[]>();
   for (const id of items.keys()) {
     const parent = parents.get(id) ?? MENU_ROOT_PARENT;
@@ -251,11 +256,25 @@ function replaceMenuStructure(
   }
 
   const deletedIDs = new Set([...previousIDs].filter((id) => !nextIDs.has(id)));
+  for (const id of peerDeletedObservedIDs) deletedIDs.add(id);
+  const skippedNextIDs = new Set<string>();
+  const blockedNextParents = new Set(peerDeletedObservedIDs);
+  for (const { item, parent } of flattened) {
+    if (blockedNextParents.has(parent) || peerDeletedObservedIDs.has(item.id)) {
+      skippedNextIDs.add(item.id);
+      blockedNextParents.add(item.id);
+    }
+  }
   const pendingDeletedIDs = [...deletedIDs];
   for (let index = 0; index < pendingDeletedIDs.length; index += 1) {
     const deletedParent = pendingDeletedIDs[index]!;
     for (const childId of childrenByParent.get(deletedParent) ?? []) {
-      if (nextIDs.has(childId) || deletedIDs.has(childId)) continue;
+      if (
+        (nextIDs.has(childId) && !skippedNextIDs.has(childId)) ||
+        deletedIDs.has(childId)
+      ) {
+        continue;
+      }
       deletedIDs.add(childId);
       pendingDeletedIDs.push(childId);
     }
@@ -266,6 +285,7 @@ function replaceMenuStructure(
     orders.delete(id);
   }
   for (const { item, parent, order } of flattened) {
+    if (skippedNextIDs.has(item.id)) continue;
     const before = previousById.get(item.id);
     const stored = menuItemStructure(item);
     if (

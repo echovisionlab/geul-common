@@ -18,6 +18,12 @@ import {
   type BlockRoomPayloadRef,
 } from "./room-access.ts";
 import { longestCommonSubsequence } from "./replay-structure.ts";
+import {
+  isBlockRoomInlineContentRef,
+  reconcileBlockRoomInlineContent,
+} from "./inline-content-mutations.ts";
+import { fromYInlineContent } from "./inline-content-projection.ts";
+import { mergeInlineIntent, mergeTextIntent } from "./replay-inline-merge.ts";
 
 const STABLE_ARRAY_ID_FIELDS = ["id", "rowId", "cellId", "unitId"] as const;
 
@@ -239,12 +245,7 @@ function writePayloadValue(
     replaceBlockRoomPayloadArray(document, ref, value);
     return;
   }
-  const node = roomNode(document, ref);
-  if (typeof value === "string" && nodeTextPredicate(node, ref)(ref.path)) {
-    replaceBlockRoomCollaborativeText(document, ref, value);
-  } else {
-    setBlockRoomAtomicValue(document, ref, value);
-  }
+  setBlockRoomAtomicValue(document, ref, value);
 }
 
 function applyPayloadDiff(
@@ -253,6 +254,36 @@ function applyPayloadDiff(
   before: JsonValue | undefined,
   after: JsonValue | undefined,
 ): void {
+  if (
+    isBlockRoomInlineContentRef(ref) &&
+    (before === undefined || isJsonArray(before)) &&
+    (after === undefined || isJsonArray(after))
+  ) {
+    const current = readPayload(document, ref);
+    const peer = current instanceof Y.Array ? fromYInlineContent(current) : [];
+    reconcileBlockRoomInlineContent(
+      document,
+      ref,
+      peer,
+      mergeInlineIntent(before ?? [], after ?? [], peer),
+    );
+    return;
+  }
+  if (
+    (before === undefined || typeof before === "string") &&
+    (after === undefined || typeof after === "string") &&
+    nodeTextPredicate(roomNode(document, ref), ref)(ref.path)
+  ) {
+    const current = readPayload(document, ref);
+    if (current !== undefined && !(current instanceof Y.Text))
+      fail(`replay:payload_shape:${ref.id}:${ref.path}`);
+    replaceBlockRoomCollaborativeText(
+      document,
+      ref,
+      mergeTextIntent(before ?? "", after ?? "", current?.toString() ?? ""),
+    );
+    return;
+  }
   if (after === undefined) {
     deletePayloadValue(document, ref);
     return;

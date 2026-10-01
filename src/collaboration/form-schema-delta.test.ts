@@ -134,6 +134,61 @@ describe("applyFormSchemaPatch", () => {
     });
   });
 
+  it("skips additions beneath a peer-deleted parent and keeps independent edits", () => {
+    const previous = schema();
+    previous.steps.push({
+      id: "step-b",
+      title: "Second",
+      fields: [
+        {
+          id: "field-z",
+          key: "z",
+          type: "text",
+          label: "Z",
+          description: "before",
+        },
+      ],
+    });
+
+    const current = structuredClone(previous);
+    current.steps = current.steps.filter((step) => step.id !== "step-a");
+    current.steps[0]!.fields[0]!.label = "Peer label";
+
+    const next = structuredClone(previous);
+    next.steps[0]!.fields.push({
+      id: "field-new",
+      key: "new",
+      type: "select",
+      label: "New",
+      options: [{ id: "option-new", value: "one", label: "One" }],
+      validation: {
+        validators: [
+          { id: "validator-new", name: "Required", predicate: "required" },
+        ],
+      },
+    });
+    next.steps[1]!.fields[0]!.description = "local description";
+
+    expect(applyFormSchemaPatch(current, previous, next, "source")).toEqual({
+      id: "form-schema",
+      steps: [
+        {
+          id: "step-b",
+          title: "Second",
+          fields: [
+            {
+              id: "field-z",
+              key: "z",
+              type: "text",
+              label: "Peer label",
+              description: "local description",
+            },
+          ],
+        },
+      ],
+    });
+  });
+
   it("permits target localized leaves but rejects target structural changes", () => {
     const previous = schema();
     const changedLabel = schema({ firstLabel: "A 번역" });
@@ -175,7 +230,7 @@ describe("applyFormSchemaPatch", () => {
     ).toEqual(localDeleteParent);
   });
 
-  it("rejects malformed schemas, identity changes, and adds under missing parents", () => {
+  it("rejects malformed schemas and identity changes while skipping adds under a deleted parent", () => {
     expect(patchError({}, schema(), schema())).toMatchObject({
       reason: "invalid_schema",
     });
@@ -194,14 +249,13 @@ describe("applyFormSchemaPatch", () => {
     });
     const currentWithoutStep = { id: "form-schema", steps: [] };
     expect(
-      patchError(
+      applyFormSchemaPatch(
         currentWithoutStep,
         previousWithParent,
         nextWithChildUnderMissingParent,
+        "source",
       ),
-    ).toMatchObject({
-      reason: "schema_add_parent_missing",
-    });
+    ).toEqual(currentWithoutStep);
   });
 
   it("rejects malformed collection entries, duplicate identities, and non-JSON properties", () => {
