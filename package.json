@@ -40,6 +40,7 @@
     "./collaboration/document": "./src/collaboration/document.ts",
     "./collaboration/email-layout": "./src/collaboration/email-layout.ts",
     "./collaboration/form": "./src/collaboration/form.ts",
+    "./collaboration/form-schema-delta": "./src/collaboration/form-schema-delta.ts",
     "./collaboration/label": "./src/collaboration/label.ts",
     "./collaboration/map-theme": "./src/collaboration/map-theme.ts",
     "./collaboration/menu": "./src/collaboration/menu.ts",
@@ -62,7 +63,7 @@
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.14.0",
-    "@echovisionlab/geul-proto": "^0.2.0",
+    "@echovisionlab/geul-proto": "^0.3.0",
     "zod": "^4.4.3"
   },
   "peerDependencies": {

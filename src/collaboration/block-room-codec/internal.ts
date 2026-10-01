@@ -354,24 +354,50 @@ function identityArray(
   value: JsonValue,
   collection: string,
   identity: string,
-  nestedCollection?: string,
-  nestedIdentity?: string,
 ): unknown[] {
   const object = jsonObject(value, "locale_identity:payload");
   const children = object[collection];
   if (!Array.isArray(children)) return [];
+  return children.map(
+    (child) => jsonObject(child, "locale_identity:item")[identity],
+  );
+}
+
+const tableIdentityPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
+
+function tableIdentityArray(
+  value: JsonValue,
+  collection: string,
+  identity: string,
+  nestedIdentity: string,
+): unknown[] {
+  const object = jsonObject(value, "locale_identity:payload");
+  const children = object[collection];
+  if (!Array.isArray(children)) return [];
+  const seenRows = new Set<string>();
+  const seenCells = new Set<string>();
   return children.map((child) => {
     const item = jsonObject(child, "locale_identity:item");
-    if (!nestedCollection || !nestedIdentity) return item[identity];
-    const nested = item[nestedCollection];
+    const rowId = item[identity];
+    if (typeof rowId !== "string" || !tableIdentityPattern.test(rowId))
+      fail("locale_identity:table_row_id");
+    if (seenRows.has(rowId)) fail("locale_identity:table_duplicate_row_id");
+    seenRows.add(rowId);
+    const nested = item.cells;
+    const cells = Array.isArray(nested) ? nested : [];
     return {
-      id: item[identity],
-      children: Array.isArray(nested)
-        ? nested.map(
-            (entry) =>
-              jsonObject(entry, "locale_identity:nested")[nestedIdentity],
-          )
-        : [],
+      id: rowId,
+      children: cells.map((entry) => {
+        const cell = jsonObject(entry, "locale_identity:nested");
+        const cellId = cell[nestedIdentity];
+        if (typeof cellId !== "string" || !tableIdentityPattern.test(cellId))
+          fail("locale_identity:table_cell_id");
+        if (seenCells.has(cellId))
+          fail("locale_identity:table_duplicate_cell_id");
+        seenCells.add(cellId);
+        return cellId;
+      }),
     };
   });
 }
@@ -402,18 +428,11 @@ export function assertBlockRoomLocaleProjectionParity(yDocument: Y.Doc): void {
         jsonObject(localePayload, `locale:${id}:payload`).content,
         `locale:${id}:content`,
       );
-      const baseIdentity = identityArray(
-        baseContent,
-        "rows",
-        "id",
-        "cells",
-        "id",
-      );
-      const localeIdentity = identityArray(
+      const baseIdentity = tableIdentityArray(baseContent, "rows", "id", "id");
+      const localeIdentity = tableIdentityArray(
         localeContent,
         "rows",
         "rowId",
-        "cells",
         "cellId",
       );
       if (JSON.stringify(baseIdentity) !== JSON.stringify(localeIdentity))
