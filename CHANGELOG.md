@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/echovisionlab/geul-common/compare/v0.3.1...v0.3.2) (2026-10-05)
+
+
+### Bug Fixes
+
+* **deps:** refresh shared contracts and package tooling ([#25](https://github.com/echovisionlab/geul-common/issues/25)) ([3fda22c](https://github.com/echovisionlab/geul-common/commit/3fda22c96294e323802138ef2e5e3f200b77d788))
+
 ## [0.3.1](https://github.com/echovisionlab/geul-common/compare/v0.3.0...v0.3.1) (2026-10-01)
 
 
