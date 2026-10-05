@@ -7,6 +7,7 @@ export {
   type RichTextBlockRoomDocumentType,
 } from "./block-room-codec/internal.ts";
 export { hydrateCanonicalBlockRoom } from "./block-room-codec/hydration.ts";
+export { replayBlockRoomChanges } from "./block-room-codec/replay.ts";
 export {
   applyAIDocumentOperationsToBlockRoom,
   type ApplyAIDocumentOperationsOptions,
@@ -33,6 +34,7 @@ export {
   type BlockRoomAtomicValue,
   type ReplaceRichTextBlockDataOptions,
 } from "./block-room-codec/payload-mutations.ts";
+export { reconcileBlockRoomInlineContent } from "./block-room-codec/inline-content-mutations.ts";
 export {
   roomDocumentType,
   roomLocale,

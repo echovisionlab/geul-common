@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.3.1](https://github.com/echovisionlab/geul-common/compare/v0.3.0...v0.3.1) (2026-10-01)
+
+
+### Bug Fixes
+
+* **collaboration:** preserve concurrent recovery intent ([#22](https://github.com/echovisionlab/geul-common/issues/22)) ([8b0e1d2](https://github.com/echovisionlab/geul-common/commit/8b0e1d235a5d6eaf143dd19707a6067e5564b630))
+
+## [0.3.0](https://github.com/echovisionlab/geul-common/compare/v0.2.4...v0.3.0) (2026-10-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* replay editor intent against current canonical state ([#20](https://github.com/echovisionlab/geul-common/issues/20))
+
+### Bug Fixes
+
+* replay editor intent against current canonical state ([#20](https://github.com/echovisionlab/geul-common/issues/20)) ([8531502](https://github.com/echovisionlab/geul-common/commit/85315027cd499e6e06c89c995cf1387e67b90563))
+
+## [0.2.4](https://github.com/echovisionlab/geul-common/compare/v0.2.3...v0.2.4) (2026-09-30)
+
+
+### Bug Fixes
+
+* **collaboration:** make inline and locale ownership explicit ([#18](https://github.com/echovisionlab/geul-common/issues/18)) ([618a606](https://github.com/echovisionlab/geul-common/commit/618a60693b63fcea19642af15a4b957edeffea6f))
+
+## [0.2.3](https://github.com/echovisionlab/geul-common/compare/v0.2.2...v0.2.3) (2026-09-30)
+
+
+### Bug Fixes
+
+* **editor:** keep Unicode edits on character boundaries ([e0bfb2e](https://github.com/echovisionlab/geul-common/commit/e0bfb2e5ee2aa7c5eb573509a3fb9ffc0e3b430f))
+* **editor:** keep Unicode text edits on character boundaries ([daa29f9](https://github.com/echovisionlab/geul-common/commit/daa29f974d5a534a772511f3ef749f67ef130597))
+* retain independent link edits and streamline inline projection ([#15](https://github.com/echovisionlab/geul-common/issues/15)) ([2fd8092](https://github.com/echovisionlab/geul-common/commit/2fd8092168d37ad7f3bed5243a3ccd6fc5cb8177))
+
+## [0.2.2](https://github.com/echovisionlab/geul-common/compare/v0.2.1...v0.2.2) (2026-09-30)
+
+
+### Bug Fixes
+
+* preserve collaborative text during inline formatting ([#13](https://github.com/echovisionlab/geul-common/issues/13)) ([656a92b](https://github.com/echovisionlab/geul-common/commit/656a92b6c6f88250edf9ba3eb74a034dd180d7c4))
+
 ## [0.2.1](https://github.com/echovisionlab/geul-common/compare/v0.2.0...v0.2.1) (2026-09-08)
 
 

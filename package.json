@@ -2,7 +2,7 @@
   "name": "@echovisionlab/geul-common",
   "description": "Shared TypeScript contracts and helpers for Geul editors, collaboration, localized content, media blocks, pages, posts, and runtime events.",
   "author": "state303 <state303@dsub.io>",
-  "version": "0.2.1",
+  "version": "0.3.1",
   "private": false,
   "type": "module",
   "repository": {
@@ -40,6 +40,7 @@
     "./collaboration/document": "./src/collaboration/document.ts",
     "./collaboration/email-layout": "./src/collaboration/email-layout.ts",
     "./collaboration/form": "./src/collaboration/form.ts",
+    "./collaboration/form-schema-delta": "./src/collaboration/form-schema-delta.ts",
     "./collaboration/label": "./src/collaboration/label.ts",
     "./collaboration/map-theme": "./src/collaboration/map-theme.ts",
     "./collaboration/menu": "./src/collaboration/menu.ts",
@@ -62,7 +63,8 @@
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.14.0",
-    "@echovisionlab/geul-proto": "^0.2.0",
+    "@echovisionlab/geul-proto": "^0.3.0",
+    "diff": "9.0.0",
     "zod": "^4.4.3"
   },
   "peerDependencies": {

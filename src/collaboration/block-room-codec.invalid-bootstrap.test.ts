@@ -1,4 +1,4 @@
-import { create, fromJson } from "@bufbuild/protobuf";
+import { create, fromJson, type JsonValue } from "@bufbuild/protobuf";
 import {
   contentBlockCatalogFingerprint,
   validateLocalizedPageDocument,
@@ -17,7 +17,17 @@ import {
 } from "@echovisionlab/geul-proto/content/block_content_pb.ts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as Y from "yjs";
-import { hydrateCanonicalBlockRoom as hydrateExactBlockRoom } from "./block-room-codec.js";
+import {
+  canonicalBlockRoomDocumentBytes,
+  hydrateCanonicalBlockRoom as hydrateExactBlockRoom,
+} from "./block-room-codec.js";
+import {
+  assertExactKeys,
+  materializePageSectionPayload,
+  fromYValue,
+  jsonObject,
+  pageSectionPayload,
+} from "./block-room-codec/internal.ts";
 
 vi.mock(
   "@echovisionlab/geul-proto/content/block_catalog.ts",
@@ -120,6 +130,24 @@ function pageDocument(): PageDocument {
 }
 
 describe("invalid canonical bootstrap defense", () => {
+  it("rejects malformed JSON values, unknown keys, and non-JSON Y values", () => {
+    expect(() => jsonObject(null, "test_object")).toThrow(
+      "block_room_invalid:test_object",
+    );
+
+    const document = new Y.Doc();
+    const map = document.getMap<unknown>("test");
+    map.set("unexpected", true);
+    expect(() => assertExactKeys(map, new Set(["known"]), "test_map")).toThrow(
+      "block_room_invalid:test_map:unknown_key:unexpected",
+    );
+    document.destroy();
+
+    expect(() => fromYValue(Number.NaN)).toThrow(
+      "block_room_invalid:non_json_value",
+    );
+  });
+
   beforeEach(() => {
     vi.mocked(validateLocalizedPageDocument).mockClear();
     vi.mocked(validateLocalizedRichTextDocument).mockClear();
@@ -138,6 +166,96 @@ describe("invalid canonical bootstrap defense", () => {
     expect(() =>
       hydrateCanonicalBlockRoom(new Y.Doc(), "post", document),
     ).toThrow("not_dense");
+  });
+
+  it("normalizes canonical rich-text and Page bytes and rejects mismatched document types", () => {
+    const rich = richDocument();
+    const localizedRich = create(LocalizedRichTextDocumentSchema, {
+      blockCatalogFingerprint: rich.blockCatalogFingerprint,
+      profile: rich.profile,
+      locale: rich.localeOverlays[0]!.locale,
+      base: rich.base,
+      localeOverlay: rich.localeOverlays[0],
+    });
+    expect(
+      canonicalBlockRoomDocumentBytes("post", localizedRich),
+    ).toBeInstanceOf(Uint8Array);
+
+    const localizedPage = fromJson(LocalizedPageDocumentSchema, {
+      blockCatalogFingerprint: contentBlockCatalogFingerprint,
+      locale: "ko",
+      base: {
+        nodes: [
+          {
+            section: {
+              id: SECTION_ID,
+              externalVideo: { props: { uri: "https://example.com/video" } },
+            },
+            placement: { index: 0 },
+          },
+        ],
+      },
+      localeOverlay: {
+        locale: "ko",
+        sections: [
+          {
+            sectionId: SECTION_ID,
+            externalVideo: { props: {} },
+          },
+        ],
+      },
+    });
+    expect(
+      canonicalBlockRoomDocumentBytes("page", localizedPage),
+    ).toBeInstanceOf(Uint8Array);
+    expect(() =>
+      canonicalBlockRoomDocumentBytes("post", localizedPage),
+    ).toThrow("document_type");
+    expect(() =>
+      canonicalBlockRoomDocumentBytes("page", localizedRich),
+    ).toThrow("document_type");
+
+    const wrongProfile = create(LocalizedRichTextDocumentSchema, {
+      ...localizedRich,
+      profile: RichTextProfile.WORK,
+    });
+    expect(() => canonicalBlockRoomDocumentBytes("post", wrongProfile)).toThrow(
+      "document_profile",
+    );
+  });
+
+  it("preserves Page section settings when projecting canonical payloads", () => {
+    const withSettings = pageSectionPayload(
+      {
+        id: SECTION_ID,
+        externalVideo: { props: { uri: "https://example.com/video" } },
+        settings: { contentHeight: "content" },
+      },
+      "page_section",
+    );
+    expect(withSettings.payload).toEqual({
+      props: { uri: "https://example.com/video" },
+      settings: { contentHeight: "content" },
+    });
+    expect(
+      materializePageSectionPayload(withSettings.payload, "page_section"),
+    ).toEqual({
+      value: { props: { uri: "https://example.com/video" } },
+      settings: { contentHeight: "content" },
+    });
+
+    const withoutSettings = pageSectionPayload(
+      {
+        id: SECTION_ID,
+        externalVideo: { props: { uri: "https://example.com/video" } },
+      },
+      "page_section",
+    );
+    expect(
+      materializePageSectionPayload(withoutSettings.payload, "page_section"),
+    ).toEqual({
+      value: { props: { uri: "https://example.com/video" } },
+    });
   });
 
   it("rejects missing rich and Page placements", () => {
@@ -331,5 +449,126 @@ describe("invalid canonical bootstrap defense", () => {
     expect(() =>
       hydrateCanonicalBlockRoom(new Y.Doc(), "page", immersive),
     ).toThrow(`locale:${SECTION_ID}:immersive_identity_mismatch`);
+  });
+
+  it("requires durable table UUID identities while preserving empty rows and cells", () => {
+    const tableDocument = (baseRows: JsonValue[], localeRows: JsonValue[]) =>
+      fromJson(RichTextDocumentSchema, {
+        blockCatalogFingerprint: contentBlockCatalogFingerprint,
+        profile: RichTextProfile.POST,
+        sourceLocale: "ko",
+        base: {
+          nodes: [
+            {
+              block: {
+                id: BLOCK_ID,
+                table: { props: {}, content: { rows: baseRows } },
+              },
+              placement: { index: 0 },
+            },
+          ],
+        },
+        localeOverlays: [
+          {
+            locale: "ko",
+            blocks: [
+              {
+                blockId: BLOCK_ID,
+                table: { props: {}, content: { rows: localeRows } },
+              },
+            ],
+          },
+        ],
+      }) as RichTextDocument;
+
+    expect(() =>
+      hydrateCanonicalBlockRoom(
+        new Y.Doc(),
+        "post",
+        tableDocument(
+          [{ cells: [{ props: {} }] }],
+          [
+            {
+              rowId: TABLE_ROW_ID,
+              cells: [{ cellId: TABLE_CELL_ID, content: [] }],
+            },
+          ],
+        ),
+      ),
+    ).toThrow(`block_room_invalid:locale_identity:table_row_id`);
+
+    expect(() =>
+      hydrateCanonicalBlockRoom(
+        new Y.Doc(),
+        "post",
+        tableDocument(
+          [{ id: "not-a-uuid", cells: [] }],
+          [{ rowId: "not-a-uuid", cells: [] }],
+        ),
+      ),
+    ).toThrow(`block_room_invalid:locale_identity:table_row_id`);
+
+    expect(() =>
+      hydrateCanonicalBlockRoom(
+        new Y.Doc(),
+        "post",
+        tableDocument(
+          [{ id: TABLE_ROW_ID, cells: [{ props: {} }] }],
+          [{ rowId: TABLE_ROW_ID, cells: [{ content: [] }] }],
+        ),
+      ),
+    ).toThrow(`block_room_invalid:locale_identity:table_cell_id`);
+
+    expect(() =>
+      hydrateCanonicalBlockRoom(
+        new Y.Doc(),
+        "post",
+        tableDocument(
+          [{ id: TABLE_ROW_ID, cells: [] }],
+          [{ rowId: TABLE_ROW_ID, cells: [] }],
+        ),
+      ),
+    ).not.toThrow();
+    expect(() =>
+      hydrateCanonicalBlockRoom(new Y.Doc(), "post", tableDocument([], [])),
+    ).not.toThrow();
+
+    expect(() =>
+      hydrateCanonicalBlockRoom(
+        new Y.Doc(),
+        "post",
+        tableDocument(
+          [
+            { id: TABLE_ROW_ID, cells: [] },
+            { id: TABLE_ROW_ID, cells: [] },
+          ],
+          [
+            { rowId: TABLE_ROW_ID, cells: [] },
+            { rowId: TABLE_ROW_ID, cells: [] },
+          ],
+        ),
+      ),
+    ).toThrow(`block_room_invalid:locale_identity:table_duplicate_row_id`);
+
+    expect(() =>
+      hydrateCanonicalBlockRoom(
+        new Y.Doc(),
+        "post",
+        tableDocument(
+          [
+            {
+              id: TABLE_ROW_ID,
+              cells: [{ id: TABLE_CELL_ID }, { id: TABLE_CELL_ID }],
+            },
+          ],
+          [
+            {
+              rowId: TABLE_ROW_ID,
+              cells: [{ cellId: TABLE_CELL_ID }, { cellId: TABLE_CELL_ID }],
+            },
+          ],
+        ),
+      ),
+    ).toThrow(`block_room_invalid:locale_identity:table_duplicate_cell_id`);
   });
 });
