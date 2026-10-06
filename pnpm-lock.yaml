@@ -5,6 +5,9 @@ importers:
   .:
     configDependencies: {}
     packageManagerDependencies:
+      "@pnpm/exe":
+        specifier: 12.9.1
+        version: 12.9.1
       pnpm:
         specifier: 12.9.1
         version: 12.9.1
@@ -129,6 +132,14 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  "@pnpm/exe@12.9.1":
+    resolution:
+      {
+        integrity: sha512-TZOVvYq8nwzmw8IR3P1GKZk87tV7vDPCT3oJlL7IhgYNZfLGov4jX0J8RJxuAXxIT3uxg/uiconrLLBv+X5KyA==,
+      }
+    engines: { node: ">=18.*" }
+    hasBin: true
+
   pnpm@12.9.1:
     resolution:
       {
@@ -180,6 +191,23 @@ snapshots:
   "@pnpm/exe.win32-x64@12.9.1":
     optional: true
 
+  "@pnpm/exe@12.9.1":
+    optionalDependencies:
+      "@pnpm/exe.android-arm64": 12.9.1
+      "@pnpm/exe.android-x64": 12.9.1
+      "@pnpm/exe.darwin-arm64": 12.9.1
+      "@pnpm/exe.darwin-x64": 12.9.1
+      "@pnpm/exe.freebsd-x64": 12.9.1
+      "@pnpm/exe.linux-arm64": 12.9.1
+      "@pnpm/exe.linux-arm64-musl": 12.9.1
+      "@pnpm/exe.linux-ppc64": 12.9.1
+      "@pnpm/exe.linux-riscv64": 12.9.1
+      "@pnpm/exe.linux-s390x": 12.9.1
+      "@pnpm/exe.linux-x64": 12.9.1
+      "@pnpm/exe.linux-x64-musl": 12.9.1
+      "@pnpm/exe.win32-arm64": 12.9.1
+      "@pnpm/exe.win32-x64": 12.9.1
+
   pnpm@12.9.1:
     optionalDependencies:
       "@pnpm/exe.android-arm64": 12.9.1
@@ -211,8 +239,8 @@ importers:
         specifier: ^2.16.0
         version: 2.16.0
       "@echovisionlab/geul-proto":
-        specifier: ^0.4.1
-        version: 0.4.1
+        specifier: ^0.5.0
+        version: 0.5.0
       diff:
         specifier: 9.0.0
         version: 9.0.0
@@ -306,10 +334,10 @@ packages:
         integrity: sha512-buipgOVDkkPXNR5+xBpDw7Zk2n1EvU7qBJCNUcL7rhQ//kfpOXPAvQ511Os0vpLYJ1pZnvudNytkQt2hst3wqA==,
       }
 
-  "@echovisionlab/geul-proto@0.4.1":
+  "@echovisionlab/geul-proto@0.5.0":
     resolution:
       {
-        integrity: sha512-oS29iPZ5Zws3Zrndx5iHzextSPXbFHCQtlinP5wqX98cKZqhJB4SnF9ACwN/CUZm8mQ7p7shA7jUQFq9JS/TeQ==,
+        integrity: sha512-/W0lCEDtrUizmW7vOlSDtkpQrYzoI2fVfMiNZ/Om9E4+v7tWzjXyYW7OqrO4jDlYwnvUEni+OYk5puCyWjSz4Q==,
       }
 
   "@emnapi/core@1.11.2":
@@ -2330,7 +2358,7 @@ snapshots:
       hashery: 1.5.1
       keyv: 5.6.0
 
-  "@echovisionlab/geul-proto@0.4.1":
+  "@echovisionlab/geul-proto@0.5.0":
     dependencies:
       "@bufbuild/protobuf": 2.16.0
 

@@ -2790,3 +2790,88 @@ describe("Mermaid collaborative source", () => {
     },
   );
 });
+
+describe("Embed canonical Page persistence", () => {
+  it("round-trips typed permissions and sizing with collaborative localized titles", () => {
+    const document = fromJson(PageDocumentSchema, {
+      blockCatalogFingerprint: contentBlockCatalogFingerprint,
+      sourceLocale: "ko",
+      base: {
+        nodes: [
+          {
+            section: {
+              id: BLOCK_ID,
+              embed: {
+                props: {
+                  uri: "https://example.com/embed",
+                  heightMode: "HEIGHT_MODE_AUTO",
+                  height: 720,
+                  allowScripts: true,
+                  allowSameOrigin: true,
+                  allowForms: false,
+                  allowDownloads: false,
+                  allowPopups: false,
+                  allowMicrophone: true,
+                  allowSpeakerSelection: true,
+                  allowFullscreen: true,
+                },
+              },
+            },
+            placement: { index: 0 },
+          },
+        ],
+      },
+      localeOverlays: [
+        {
+          locale: "ko",
+          sections: [
+            { sectionId: BLOCK_ID, embed: { props: { title: "설명" } } },
+          ],
+        },
+      ],
+    });
+    const room = new Y.Doc();
+    hydrateCanonicalBlockRoom(room, "page", document);
+    assertCanonicalBlockRoomParity(room, "page", document);
+    const peer = clonedRoom(room);
+    const title = getBlockRoomCollaborativeText(peer, {
+      family: "page_section",
+      id: BLOCK_ID,
+      locale: true,
+      path: "props.title",
+    });
+    title.insert(title.length, "!");
+    Y.applyUpdate(room, Y.encodeStateAsUpdate(peer));
+    const materialized = materializeCanonicalBlockRoom(room, "page");
+    expect(
+      toJson(
+        LocalizedPageDocumentSchema,
+        materialized as LocalizedPageDocument,
+      ),
+    ).toMatchObject({
+      base: {
+        nodes: [
+          {
+            section: {
+              embed: {
+                props: {
+                  uri: "https://example.com/embed",
+                  heightMode: "HEIGHT_MODE_AUTO",
+                  height: 720,
+                  allowScripts: true,
+                  allowSameOrigin: true,
+                  allowMicrophone: true,
+                  allowSpeakerSelection: true,
+                  allowFullscreen: true,
+                },
+              },
+            },
+          },
+        ],
+      },
+      localeOverlay: { sections: [{ embed: { props: { title: "설명!" } } }] },
+    });
+    room.destroy();
+    peer.destroy();
+  });
+});

@@ -19,6 +19,26 @@ describe("page block fixtures", () => {
     expect(types.filter((type) => type === "rich-text")).toHaveLength(2);
   });
 
+  it("provides explicit embed security and sizing defaults", () => {
+    const embed = PAGE_BLOCK_FIXTURE_SECTIONS.find(
+      (section) => section.type === "embed",
+    );
+    expect(embed?.props).toEqual({
+      uri: "https://example.com/embed",
+      title: "Embedded content",
+      heightMode: "fixed",
+      height: "640",
+      allowScripts: "true",
+      allowSameOrigin: "true",
+      allowForms: "false",
+      allowDownloads: "false",
+      allowPopups: "false",
+      allowMicrophone: "false",
+      allowSpeakerSelection: "false",
+      allowFullscreen: "false",
+    });
+  });
+
   it("returns an isolated structured clone", () => {
     const first = createPageBlockFixtureSections();
     const second = createPageBlockFixtureSections();

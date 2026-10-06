@@ -21,7 +21,23 @@ export type PageBlockType =
   | "map"
   | "external-video"
   | "columns"
-  | "mermaid";
+  | "mermaid"
+  | "embed";
+
+export interface EmbedProps {
+  uri: string;
+  title: string;
+  heightMode: "fixed" | "auto" | "viewport";
+  height: string;
+  allowScripts: "true" | "false";
+  allowSameOrigin: "true" | "false";
+  allowForms: "true" | "false";
+  allowDownloads: "true" | "false";
+  allowPopups: "true" | "false";
+  allowMicrophone: "true" | "false";
+  allowSpeakerSelection: "true" | "false";
+  allowFullscreen: "true" | "false";
+}
 
 export interface MermaidProps {
   source: string;
@@ -89,6 +105,7 @@ export const PAGE_BLOCK_TYPES = [
   "external-video",
   "columns",
   "mermaid",
+  "embed",
 ] as const satisfies readonly PageBlockType[];
 
 function createParagraphBlock(id: string, text: string): PageBlockFixtureBlock {
@@ -571,6 +588,25 @@ export const PAGE_BLOCK_FIXTURE_SECTIONS: PageBlockFixtureSection[] = [
     type: "mermaid",
     settings: {},
     props: { source: "flowchart LR\n  A --> B", title: "Diagram" },
+  },
+  {
+    id: "fixture-section-embed",
+    type: "embed",
+    settings: {},
+    props: {
+      uri: "https://example.com/embed",
+      title: "Embedded content",
+      heightMode: "fixed",
+      height: "640",
+      allowScripts: "true",
+      allowSameOrigin: "true",
+      allowForms: "false",
+      allowDownloads: "false",
+      allowPopups: "false",
+      allowMicrophone: "false",
+      allowSpeakerSelection: "false",
+      allowFullscreen: "false",
+    } satisfies EmbedProps,
   },
 ];
 
