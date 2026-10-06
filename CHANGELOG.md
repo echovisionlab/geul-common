@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/echovisionlab/geul-common/compare/v0.3.2...v0.4.0) (2026-10-06)
+
+
+### Features
+
+* **page:** support generic embed fixtures and collaboration ([#27](https://github.com/echovisionlab/geul-common/issues/27)) ([734f653](https://github.com/echovisionlab/geul-common/commit/734f653b403d761d4ea4ee1abba02a2df346580e))
+
 ## [0.3.2](https://github.com/echovisionlab/geul-common/compare/v0.3.1...v0.3.2) (2026-10-05)
 
 
